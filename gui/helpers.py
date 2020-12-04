@@ -3,6 +3,7 @@ import subprocess, os.path, tempfile, xml.dom.minidom, re, threading, math, io
 from zipfile import ZipFile
 
 BlackWhite = ("black","white")
+WhiteRed   = ("white","red")
 
 # basename of file without extension
 def bsn(filename):

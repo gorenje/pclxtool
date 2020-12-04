@@ -1,7 +1,6 @@
-import PySimpleGUIQt as sg
-
 from .extensions import Options
 from .helpers    import *
+from .layouts    import sg, ButtonsAndStatus
 
 def scale_frames_layout():
     return [
@@ -41,18 +40,7 @@ def scale_frames_layout():
          sg.InputText(default_text="10",
                       key="count",
                       disabled=True)],
-
-        [sg.Button('Ok',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   bind_return_key=True,
-                   key="doit"),
-         sg.VerticalSeparator(),
-         sg.Button('Cancel',button_color=BlackWhite,
-               pad=(10,7), border_width=2, size=(7,1),
-               key="-close-")],
-        [sg.Text('', relief=sg.RELIEF_SUNKEN,
-                 size=(55, 1), pad=(0, 3), key='-status-')]
-    ]
+    ] + ButtonsAndStatus()
 
 
 def scale_frames_event_handler(glbls, subwindows, window_name, target):

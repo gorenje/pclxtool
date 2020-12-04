@@ -1,7 +1,6 @@
-import PySimpleGUIQt as sg
-
 from .extensions import Options
 from .helpers    import *
+from .layouts    import sg, ButtonsAndStatus
 
 def multicopy_frames_layout():
     return [
@@ -17,18 +16,7 @@ def multicopy_frames_layout():
         [sg.Text('Count', relief=sg.RELIEF_SUNKEN,
                  size=(20, 1), pad=(0, 3)),
          sg.InputText(default_text="2", key="count")],
-
-        [sg.Button('Ok',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   bind_return_key=True,
-                   key="doit"),
-         sg.VerticalSeparator(),
-         sg.Button('Cancel',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   key="-close-")],
-        [sg.Text('', relief=sg.RELIEF_SUNKEN,
-                 size=(55, 1), pad=(0, 3), key='-status-')]
-    ]
+    ] + ButtonsAndStatus()
 
 def multicopy_frames_event_handler(glbls, subwindows, window_name, target):
     windw, event, values = obtain_subevent(subwindows, window_name)

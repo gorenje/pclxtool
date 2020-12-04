@@ -131,7 +131,6 @@ def delete_frames(opts, obj_elem):
 # This will create frame 2 where object is at 2,2, frame 3 where object
 # is at 3,3, Frame 4 ... etc until frame 9 where the object is at 9,9
 def move_along_path(opts, obj_elem):
-
     apply_to_layers = (opts.layers and opts.layers.split(",")) or (
         [elem.attributes["name"].value for elem in layers(obj_elem)])
 
@@ -169,7 +168,6 @@ def move_along_path(opts, obj_elem):
         scale_factor = ( ( width / float(viewbox[2]) ) +
                           ( height / float(viewbox[3]) ) ) / 2.0
 
-        print(tracks[0].attributes["d"].value)
         # svg coordinate system has top-left as 0,0 however p2d has
         # 0,0 in the middle of the canvas. So all points have to be
         # moved .... by half the size of the document.
@@ -203,8 +201,8 @@ def move_along_path(opts, obj_elem):
                 points = to_points(path_to_follow,
                                    opts.to_frame - opts.from_frame + 1)[1:-1]
             else:
-                srcpt  = fg.Point( tlx(src_frame), tly(src_frame))
-                destpt = fg.Point( tlx(dest_frame), tly(dest_frame))
+                srcpt  = fg.Point( tlx(src_frame),  tly(src_frame) )
+                destpt = fg.Point( tlx(dest_frame), tly(dest_frame) )
 
                 points = fg.Line(srcpt, destpt).get_points(
                     frnr(dest_frame) - frnr(src_frame) + 1)[1:-1]
@@ -212,7 +210,6 @@ def move_along_path(opts, obj_elem):
             last_frame = src_frame
 
             for pt in points:
-
                 new_frame_nr = frnr(last_frame) + 1
 
                 # If an existing frame exists, then move it, don't replace
@@ -502,7 +499,11 @@ def multicopy_frames(opts, obj_elem):
 # ==> but move along the frame.
 def duplicate_frames(opts, obj_elem):
     apply_to_layers = (opts.layers and opts.layers.split(",")) or (
-        [elem.attributes["name"].value for elem in layers(obj_elem)])
+        [elem.attributes["name"].value for elem in layers(obj_elem)]
+    )
+
+    orig_to_frame   = opts.to_frame
+    orig_from_frame = opts.from_frame
 
     prgstr = ""
     for layer in layers(obj_elem):
@@ -519,8 +520,8 @@ def duplicate_frames(opts, obj_elem):
                 opts.from_frame = min([frnr(e) for e in imgs(layer)])
             else:
                 frnums = [frnr(e) for e in imgs(layer)]
-                opts.to_frame   = min([ max(frnums), opts.to_frame ])
-                opts.from_frame = max([ min(frnums), opts.from_frame ])
+                opts.to_frame   = min([ max(frnums), orig_to_frame ])
+                opts.from_frame = max([ min(frnums), orig_from_frame ])
 
             frame_rng = range(opts.from_frame, opts.to_frame + 1)
             frames_to_copy, ref_frame, last_frame, all_imgs = {}, None, None, {}

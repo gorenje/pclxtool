@@ -7,6 +7,23 @@ from PIL import Image
 
 from .helpers import BlackWhite
 
+def ButtonsAndStatus():
+    return [
+        [sg.Button('Ok',button_color=BlackWhite,
+                   pad=(10,7), border_width=2, size=(7,1),
+                   bind_return_key=True,
+                   key="doit"),
+         sg.VerticalSeparator(),
+         sg.Button('Cancel',button_color=BlackWhite,
+                   pad=(10,7), border_width=2, size=(7,1),
+                   key="-close-")
+        ],
+        [
+            sg.Text('', relief=sg.RELIEF_SUNKEN,
+                    size=(55, 1), pad=(0, 3), key='-status-')
+        ]
+    ]
+
 def create_info_window(glbls, obj_elem):
     frames = []
     infos  = glbls.pclx_infos
@@ -218,18 +235,26 @@ def main_window_layout():
         [
             sg.Column([
                 [
-                    sg.InputText('Drop Pclx File Here', size=(300,100),
+                    sg.Text('Drop Pclx File Here'),],[
+                    sg.InputText('', size=(300,100),
                                  key='FILENAME', enable_events=True),
                 ],
                 [sg.B('Update',
-                     tooltip="Update the current Pclx",
-                     button_color=BlackWhite,
-                     pad=(0,0), size=(10,1), key='update'),
+                      tooltip="Update the current Pclx",
+                      button_color=BlackWhite,
+                      pad=(0,0), size=(10,1), key='update'),
                  sg.VerticalSeparator(pad=(10,10)),
                  sg.B('Unload',
-                     tooltip="Unload the current Pclx",
-                     button_color=BlackWhite,
-                     pad=(0,0), size=(10,1), key='unload')
+                      tooltip="Unload the current Pclx",
+                      button_color=BlackWhite,
+                      pad=(0,0), size=(10,1), key='unload'),
+                 sg.VerticalSeparator(pad=(10,10)),
+                 sg.B('Browse',
+                      tooltip="Unload the current Pclx",
+                      button_color=BlackWhite,
+                      pad=(0,0), size=(10,1),
+                      enable_events=True,
+                      key='browse')
                 ],
             ]),
             sg.Column([
@@ -274,7 +299,7 @@ def main_window_layout():
                  key='-status-')]
     ]
 
-def no_image_data():
+def no_image_data_layout():
     return [
         [sg.Text(
             'No Image Data, Frame Blank.'
@@ -288,6 +313,8 @@ def show_frame_layout(image_data, tlx, tly):
 
     return [
         [
+            # Use an inputtext here since text can be copied, with sg.Text
+            # the contents can't be selected & copied.
             sg.InputText('Size: {}x{} Loc: {}x{}'.format(size_x,size_y,tlx,tly),
                          size=(20, 1), pad=(0, 3))
         ],

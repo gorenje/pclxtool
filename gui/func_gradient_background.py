@@ -1,7 +1,6 @@
-import PySimpleGUIQt as sg
-
 from .extensions import Options
 from .helpers    import *
+from .layouts    import sg, ButtonsAndStatus
 
 def gradient_background_layout(pclx_infos):
     cvinfos = pclx_infos["cv"][list(pclx_infos["cv"].keys())[0]]
@@ -32,18 +31,7 @@ def gradient_background_layout(pclx_infos):
         [sg.Text('Height', relief=sg.RELIEF_SUNKEN, size=(20, 1), pad=(0, 3)),
          sg.InputText(default_text=cvinfos["height"], key="height")
         ],
-
-        [sg.Button('Ok',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   bind_return_key=True,
-                   key="doit"),
-         sg.VerticalSeparator(),
-         sg.Button('Cancel',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   key="-close-")],
-        [sg.Text('', relief=sg.RELIEF_SUNKEN,
-                 size=(55, 1), pad=(0, 3), key='-status-')]
-    ]
+    ] + ButtonsAndStatus()
 
 def gradient_background_event_handler(glbls, subwindows, window_name, target):
     windw, event, values = obtain_subevent(subwindows, window_name)

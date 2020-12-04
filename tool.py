@@ -10,21 +10,17 @@ from zipfile  import ZipFile
 ## local imports
 import actions
 
-from helpers import bsn, pclx_loaded, create_popup, open_with_pencil
+from helpers import pclx_loaded, create_popup, open_with_pencil
 
 from gui import *
 
-from gui.extensions     import Options
-from gui.layouts        import *
-# from gui.event_handler  import *
-from gui.helpers        import throw_off_to_thread, obtain_subevent, write_new_pclx, thread_do_work, unzip_pclx
+from gui.extensions import Options
+from gui.layouts    import *
+from gui.helpers    import write_new_pclx, thread_do_work, unzip_pclx
 
-from globals     import FFMPEG_PRORES_PROFILES, FFMPEG_PROFILES, EMACS_CLIENT
+from globals import FFMPEG_PRORES_PROFILES, FFMPEG_PROFILES, EMACS_CLIENT
 
 sg.theme('SystemDefault')
-
-WhiteRed   = ("white","red")
-BlackWhite = ("black","white")
 
 ##
 ## Command line handler
@@ -167,6 +163,9 @@ def run_as_gui():
 
     while True:
         event, values = glbls.main_window.Read(timeout=100)
+
+        # event == "__TIMEOUT__"
+
         if event in (None, 'Exit'):
             break
 
@@ -249,6 +248,18 @@ def run_as_gui():
             glbls.main_window['update'].Update(disabled=False,
                                                button_color=BlackWhite)
 
+        if event == "browse":
+            glbls.main_window["browse"].Update(disabled=True,
+                                               button_color=WhiteRed)
+
+            filename = sg.PopupGetFile("Find Pencil2D File",
+                                       file_types=(("P2D","*.pclx"),))
+            if filename:
+                glbls.main_window['FILENAME'].Update(filename)
+
+            glbls.main_window["browse"].Update(disabled=False,
+                                               button_color=BlackWhite)
+
         if event == 'FILENAME':
             if values['FILENAME'] == "" or values['FILENAME'] == None:
                 glbls.srcFileName = None
@@ -262,12 +273,12 @@ def run_as_gui():
                 continue
 
             if subwindows["info"] != None:
-                glbls.main_window['-status-'].Update("Already Loaded")
-                continue
+                subwindows["info"].Close()
+                subwindows["info"] = None
 
             glbls.main_window['-status-'].Update("Loading....")
 
-            def fubar(glbls, subwindows, values):
+            def load_pclx(glbls, subwindows, values):
                 tempDir, domtree, obj_elem = unzip_pclx(glbls,
                                                         values['FILENAME'],
                                                         mainXmlOnly=True)
@@ -279,9 +290,9 @@ def run_as_gui():
                     msg = "Done Loading"
 
                 glbls.main_window['-status-'].Update(msg)
-                if tempDir != None: tempDir.cleanup()
 
-            threading.Thread(target=fubar,args=(glbls,subwindows,values,),
+            threading.Thread(target=load_pclx,
+                             args=(glbls,subwindows,values,),
                              daemon=True).start()
 
         ##
@@ -342,7 +353,7 @@ def run_as_gui():
                             )
                         except KeyError:
                             imgwindows[srcfile] = sg.Window(
-                                srcfile, layout=no_image_data()
+                                srcfile, layout=no_image_data_layout()
                             )
 
                 if dtpt["action"] == "close_image_window":
