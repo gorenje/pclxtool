@@ -10,12 +10,15 @@ from zipfile  import ZipFile
 ## local imports
 import actions
 
-from helpers import bsn, unzip_pclx, write_new_pclx, thread_do_work
-from helpers import pclx_loaded, create_popup, obtain_checked_layers
-from helpers import open_with_pencil, obtain_subevent, throw_off_to_thread
+from helpers import bsn, pclx_loaded, create_popup, open_with_pencil
 
-from extensions  import Options
-from gui.layouts import *
+from gui import *
+
+from gui.extensions     import Options
+from gui.layouts        import *
+# from gui.event_handler  import *
+from gui.helpers        import throw_off_to_thread, obtain_subevent, write_new_pclx, thread_do_work, unzip_pclx
+
 from globals     import FFMPEG_PRORES_PROFILES, FFMPEG_PROFILES, EMACS_CLIENT
 
 sg.theme('SystemDefault')
@@ -62,44 +65,74 @@ def run_as_gui():
     event_subwindow_lookup = {
         "duplicate": {
             "name": "Duplicate",
-            "func": duplicate_layout,
+            "lyot": duplicate_frames_layout,
+            "hdlr": duplicate_frames_event_handler,
+            "actn": actions.duplicate_frames,
         },
         "reverseframes": {
             "name": "Reverse Frames",
-            "func": reverse_frames_layout,
+            "lyot": reverse_frames_layout,
+            "hdlr": reverse_frames_event_handler,
+            "actn": actions.reverse_frames,
         },
         "deleteframes": {
             "name": "Delete Frames",
-            "func": delete_frames_layout,
+            "lyot": delete_frames_layout,
+            "hdlr": delete_frames_event_handler,
+            "actn": actions.delete_frames,
         },
         "multicopyframes": {
             "name": "Copy Frames",
-            "func": multicopy_frames_layout,
+            "lyot": multicopy_frames_layout,
+            "hdlr": multicopy_frames_event_handler,
+            "actn": actions.multicopy_frames,
         },
         "moveframes": {
             "name": "Move Frames",
-            "func": move_frames_layout,
+            "lyot": move_frames_layout,
+            "hdlr": move_frames_event_handler,
+            "actn": actions.move_frames_by,
+        },
+        "compactlayers": {
+            "name": "Compact Layers",
+            "lyot": compact_layers_layout,
+            "hdlr": compact_layers_event_handler,
+            "actn": actions.compact_layers,
         },
         "rotate": {
             "name": "Rotate",
-            "func": rotate_layout,
+            "lyot": rotate_layout,
+            "hdlr": rotate_frames_event_handler,
+            "actn": actions.rotate_frames,
         },
         "scale": {
             "name": "Scale",
-            "func": scale_layout,
-        },
-        "movealongpath": {
-            "name": "Move along a path",
-            "func": move_along_path_layout,
+            "lyot": scale_frames_layout,
+            "hdlr": scale_frames_event_handler,
+            "actn": actions.scale_images,
         },
         "duplicatelayers": {
             "name": "Duplicate selected layers",
-            "func": duplicate_layers_layout,
+            "lyot": duplicate_layers_layout,
+            "hdlr": duplicate_layers_event_handler,
+            "actn": actions.duplicate_layers,
         },
         "mirrorframes": {
             "name": "Mirror Frames",
-            "func": mirror_frames_layout,
+            "lyot": mirror_frames_layout,
+            "hdlr": mirror_frames_event_handler,
+            "actn": actions.mirror_frames,
         },
+        "movealongpath": {
+            "name": "Move along a path",
+            "lyot": move_along_path_layout,
+            "hdlr": move_along_path_event_handler,
+            "actn": actions.move_along_path,
+        },
+        "gradient_frames": {
+            "hdlr": gradient_background_event_handler,
+            "actn": actions.gradient_frames,
+        }
     }
 
     glbls = optparse.Values()
@@ -115,7 +148,7 @@ def run_as_gui():
         default_button_element_size=(120,30),
     ).Layout(main_window_layout())
 
-    subwindows = { "movie": None, "info": None, "gradient_frames": None }
+    subwindows = { "movie": None, "info": None }
     for k in event_subwindow_lookup.keys(): subwindows[k] = None
 
     imgwindows = {}
@@ -124,14 +157,22 @@ def run_as_gui():
     glbls.pclx_infos  = None
     glbls.queue       = queue.Queue()
 
+    events_with_layouts = [k for k in event_subwindow_lookup.keys()
+                           if ("name" in event_subwindow_lookup[k].keys() and
+                               "lyot" in event_subwindow_lookup[k].keys())]
+
+    events_with_handlers = [k for k in event_subwindow_lookup.keys()
+                            if ("hdlr" in event_subwindow_lookup[k].keys() and
+                                "actn" in event_subwindow_lookup[k].keys())]
+
     while True:
         event, values = glbls.main_window.Read(timeout=100)
         if event in (None, 'Exit'):
             break
 
-        if event in event_subwindow_lookup.keys() and pclx_loaded(glbls):
+        if event in events_with_layouts and pclx_loaded(glbls):
             dt = event_subwindow_lookup[event]
-            create_popup(event, subwindows, dt["name"], dt["func"]())
+            create_popup(event, subwindows, dt["name"], dt["lyot"]())
 
         if event == "movie" and pclx_loaded(glbls):
             create_popup(event, subwindows, "Make Movie",
@@ -141,7 +182,7 @@ def run_as_gui():
 
         if event == "gradient_frames" and pclx_loaded(glbls):
             create_popup(event, subwindows, "Gradient Frames",
-                         gradient_frames_layout(glbls.pclx_infos))
+                         gradient_background_layout(glbls.pclx_infos))
 
         if event == "emacs":
             if subwindows["info"] == None:
@@ -165,9 +206,9 @@ def run_as_gui():
                 continue
 
             folder = sg.popup_get_folder(
-                ('Source folder for images.\nRecursively search the directory '+
-                 'and sub-directories for image files and add these in new '+
-                 'layers. Each image gets a unique layer.'),
+                ('Source folder for images. Directory (and subdirectories) \n'+
+                 'will be recursively searched for image files (png, jpg, \n'+
+                 'gif) and added as a new layer. One layer, one image.'),
                 size=(200,200), title='Select Image Folder')
 
             if not folder: continue
@@ -256,6 +297,11 @@ def run_as_gui():
                     glbls.main_window['-status-'].Update(dtpt["msg"])
 
             if "action" in dtpt.keys():
+                if dtpt["action"] == "new_movie_file":
+                    if glbls.main_window['open_new_movie_files'].get():
+                        subprocess.call("open '{}'".format(dtpt["filename"]),
+                                        shell=True)
+
                 if dtpt["action"] == "new_pclx_file":
                     if glbls.main_window['open_new_pclx_in_p2d'].get():
                         open_with_pencil(dtpt["filename"])
@@ -266,7 +312,8 @@ def run_as_gui():
                         glbls.main_window['FILENAME'].Update(
                             dtpt["filename"])
 
-                if dtpt["action"] == "disable_buttons":
+                if (dtpt["action"] == "disable_buttons" and
+                    dtpt["window"] != None):
                     for k in ["-close-","doit"]:
                         subwindows[dtpt["window"]][k].Update(
                             disabled=True, button_color=WhiteRed)
@@ -276,7 +323,7 @@ def run_as_gui():
                         "Error Happened", layout=error_layout(dtpt["exception"]))
 
                 if (dtpt["action"] == "enable_buttons" or
-                    dtpt["action"] == "failure"):
+                    dtpt["action"] == "failure") and dtpt["window"] != None:
                     for k in ["-close-","doit"]:
                         subwindows[dtpt["window"]][k].Update(
                             disabled=False, button_color=BlackWhite)
@@ -344,282 +391,18 @@ def run_as_gui():
         ##
         ## Handle events from the tool windows.
         ##
-        if subwindows["gradient_frames"] != None:
-            windw, event, values = obtain_subevent(subwindows, "gradient_frames")
-
-            if event == "doit":
-                windw['-status-'].Update("Gradient Frames")
-
-                opts = Options(queue=glbls.queue, window_name=windw.metadata)
-
-                opts.from_frame  = int(values["from_frame"])
-                opts.count       = int(values["count"])
-                opts.height      = int(values["height"])
-                opts.width       = int(values["width"])
-                opts.start_color = values["start_color"]
-                opts.end_color   = values["end_color"]
-
-                throw_off_to_thread(glbls, subwindows["info"], windw,
-                                    opts, actions.gradient_frames)
-
-        if subwindows["mirrorframes"] != None:
-            windw, event, values = obtain_subevent(subwindows, "mirrorframes")
-
-            if event == "doit":
-                windw['-status-'].Update("Mirror Frames")
-
-                opts = Options(queue=glbls.queue, window_name=windw.metadata)
-
-                opts.from_frame      = int(values["from_frame"])
-                opts.to_frame        = int(values["to_frame"])
-                opts.vertical_flip   = values["vertical_flip"]
-                opts.horizontal_flip = values["horizontal_flip"]
-
-                throw_off_to_thread(glbls, subwindows["info"], windw,
-                                    opts, actions.mirror_frames)
+        for subwinname in events_with_handlers:
+            if subwindows[subwinname] != None:
+                dtls = event_subwindow_lookup[subwinname]
+                dtls["hdlr"](glbls, subwindows, subwinname, dtls["actn"])
 
         if subwindows["movie"] != None:
-            windw, event, values = obtain_subevent(subwindows, "movie")
-
-            if event == "encoding_profile":
-                val = values["encoding_profile"]
-
-                if val == None or val == "":
-                    continue
-
-                prof = FFMPEG_PROFILES[values["encoding_profile"]]
-                for k,v in prof.items(): windw[k].update(v)
-
-            if event == "doit":
-                windw['-status-'].Update("Making Movie")
-
-                opts = Options(queue=glbls.queue, window_name=windw.metadata)
-
-                opts.pencil_file = glbls.srcFileName
-                opts.height      = values["height"]
-                opts.width       = values["width"]
-                opts.fps         = values["fps"]
-                opts.profile     = {v: k for k, v in
-                                    FFMPEG_PRORES_PROFILES.items()}[
-                                        values["profile"]]
-
-                threading.Thread(target=actions.make_movie,
-                                 args=(opts, None,),
-                                 daemon=True).start()
-
-        if subwindows["reverseframes"] != None:
-            windw, event, values = obtain_subevent(subwindows, "reverseframes")
-
-            if event == "reverse_all_frames":
-                windw["to_frame"].Update(disabled=values["reverse_all_frames"])
-                windw["from_frame"].Update(disabled=values["reverse_all_frames"])
-
-            if event == "doit":
-                windw['-status-'].Update("Reversing Frames")
-
-                opts = Options(queue=glbls.queue, window_name=windw.metadata)
-
-                opts.to_frame = None
-                if values["to_frame"] != "":
-                    opts.to_frame = int(values["to_frame"])
-
-                opts.from_frame = None
-                if values["from_frame"] != "":
-                    opts.from_frame = int(values["from_frame"])
-
-                opts.all_frames = values["reverse_all_frames"]
-
-                throw_off_to_thread(glbls, subwindows["info"], windw,
-                                    opts, actions.reverse_frames)
-
-        if subwindows["deleteframes"] != None:
-            windw, event, values = obtain_subevent(subwindows, "deleteframes")
-
-            if event == "doit":
-                windw['-status-'].Update("Deleting frames")
-
-                opts = Options(queue=glbls.queue, window_name=windw.metadata)
-
-                opts.to_frame = None
-                if values["to_frame"] != "":
-                    opts.to_frame = int(values["to_frame"])
-
-                opts.from_frame = None
-                if values["from_frame"] != "":
-                    opts.from_frame = int(values["from_frame"])
-
-                opts.delete_frames = values["delete_frames"]
-
-                throw_off_to_thread(glbls, subwindows["info"], windw,
-                                    opts, actions.delete_frames)
-
-        if subwindows["rotate"] != None:
-            windw, event, values = obtain_subevent(subwindows, "rotate")
-
-            if event == "extent_x":
-                windw["extent_y"].Update(values["extent_x"])
-
-            if event == "duplicate":
-                windw["to_frame"].Update(disabled=values["duplicate"])
-                windw["count"].Update(disabled=(not values["duplicate"]))
-
-            if event == "rotate_constant":
-                windw["rotate_start"].Update(disabled=values["rotate_constant"])
-
-            if event == "extend_frames":
-                windw["extent_x"].Update(disabled=(not values["extend_frames"]))
-                windw["extent_y"].Update(disabled=(not values["extend_frames"]))
-
-            if event == "doit":
-                windw['-status-'].Update("Rotating and Duplicating Frames")
-
-                opts = Options(queue=glbls.queue, window_name=windw.metadata)
-
-                opts.from_frame      = int(values["from_frame"])
-                opts.to_frame        = int(values["to_frame"])
-                opts.rotate_step     = float(values["rotate_step"])
-                opts.rotate_start    = float(values["rotate_start"])
-                opts.count           = int(values["count"])
-                opts.extent_x        = int(values["extent_x"])
-                opts.extent_y        = int(values["extent_y"])
-                opts.extend_frames   = values["extend_frames"]
-                opts.rotate_constant = values["rotate_constant"]
-                opts.duplicate       = values["duplicate"]
-
-                throw_off_to_thread(glbls, subwindows["info"], windw,
-                                    opts, actions.rotate_frames)
-
-        if subwindows["multicopyframes"] != None:
-            windw, event, values = obtain_subevent(subwindows, "multicopyframes")
-
-            if event == "doit":
-                windw['-status-'].Update("Copying Frames")
-
-                opts = Options(queue=glbls.queue, window_name=windw.metadata)
-
-                opts.to_frame   = int(values["to_frame"])
-                opts.from_frame = int(values["from_frame"])
-                opts.count      = int(values["count"])
-
-                throw_off_to_thread(glbls, subwindows["info"], windw,
-                                    opts, actions.multicopy_frames)
-
-        if subwindows["moveframes"] != None:
-            windw, event, values = obtain_subevent(subwindows, "moveframes")
-
-            if event == "move_all_frames":
-                windw["to_frame"].Update(disabled=(values["move_all_frames"]))
-                windw["from_frame"].Update(disabled=(values["move_all_frames"]))
-
-            if event == "doit":
-                windw['-status-'].Update("Moving Frames")
-
-                opts = Options(queue=glbls.queue, window_name=windw.metadata)
-
-                opts.x_delta = int(values["x_delta"])
-                opts.y_delta = int(values["y_delta"])
-
-                opts.to_frame, opts.from_frame = None, None
-                if not values["move_all_frames"]:
-                    opts.to_frame   = int(values["to_frame"])
-                    opts.from_frame = int(values["from_frame"])
-
-                throw_off_to_thread(glbls, subwindows["info"], windw,
-                                    opts, actions.move_frames_by)
-
-        if subwindows["duplicate"] != None:
-            windw, event, values = obtain_subevent(subwindows, "duplicate")
-
-            if event == "all_frames":
-                windw["to_frame"].Update(disabled=values["all_frames"])
-                windw["from_frame"].Update(disabled=values["all_frames"])
-
-            if event == "doit":
-                windw['-status-'].Update("Duplicating Film")
-
-                opts = Options(queue=glbls.queue, window_name=windw.metadata)
-
-                opts.to_frame      = int(values["to_frame"])
-                opts.from_frame    = int(values["from_frame"])
-                opts.count         = int(values["count"])
-
-                opts.keep_position = values["keep_position"]
-                opts.duplicate_all = values["duplicate_all"]
-                opts.only_x        = values["only_x"]
-                opts.only_y        = values["only_y"]
-                opts.move_existing = values["move_existing"]
-                opts.all_frames    = values["all_frames"]
-                # ignore move_all_elements since this is the default behaviour
-
-                throw_off_to_thread(glbls, subwindows["info"], windw,
-                                    opts, actions.duplicate_frames)
-
-        if subwindows["scale"] != None:
-            windw, event, values = obtain_subevent(subwindows, "scale")
-
-            if event == "duplicate":
-                windw["to_frame"].Update(disabled=values["duplicate"])
-                windw["count"].Update(disabled=(not values["duplicate"]))
-
-            if event == "scale_constant":
-                windw["scale_start"].Update(disabled=values["scale_constant"])
-
-            if event == "doit":
-                windw['-status-'].Update("Scaling Frames")
-
-                opts = Options(queue=glbls.queue, window_name=windw.metadata)
-
-                opts.to_frame       = int(values["to_frame"])
-                opts.from_frame     = int(values["from_frame"])
-                opts.count          = int(values["count"])
-                opts.duplicate      = values["duplicate"]
-                opts.scale_step     = float(values["scale_step"])
-                opts.scale_start    = float(values["scale_start"])
-                opts.scale_constant = values["scale_constant"]
-
-                throw_off_to_thread(glbls, subwindows["info"], windw,
-                                    opts, actions.scale_images)
-
-        if subwindows["duplicatelayers"] != None:
-            windw, event, values = obtain_subevent(subwindows, "duplicatelayers")
-
-            if event == "doit":
-                windw['-status-'].Update("Duplicating Layers")
-
-                opts = Options(queue=glbls.queue, window_name=windw.metadata)
-
-                opts.count  = int(values["count"])
-
-                throw_off_to_thread(glbls, subwindows["info"], windw,
-                                    opts, actions.duplicate_layers)
-
-        if subwindows["movealongpath"] != None:
-            windw, event, values = obtain_subevent(subwindows, "movealongpath")
-
-            if event == "FILENAME":
-                if os.path.isfile(values["FILENAME"].replace("file://","")):
-                    windw["to_frame"].Update(disabled=True)
-                    windw["count"].Update(disabled=False)
-
-            if event == "browse":
-                windw["browse"].Update(disabled=True)
-                filename = sg.PopupGetFile("Find SVG",
-                                           file_types=(("SVGs","*.svg"),))
-                if filename: windw['FILENAME'].Update(filename)
-                windw["browse"].Update(disabled=False)
-
-            if event == "doit":
-                windw['-status-'].Update("Moving objects along path")
-
-                opts = Options(queue=glbls.queue, window_name=windw.metadata)
-
-                opts.from_frame   = int(values["from_frame"])
-                opts.to_frame     = int(values["to_frame"])
-                opts.count        = int(values["count"])
-                opts.svg_filename = values["FILENAME"]
-
-                throw_off_to_thread(glbls, subwindows["info"], windw,
-                                    opts, actions.move_along_path)
+            make_movie_event_handler(glbls,
+                                     subwindows,
+                                     "movie",
+                                     actions.make_movie,
+                                     FFMPEG_PROFILES,
+                                     FFMPEG_PRORES_PROFILES)
 
     glbls.main_window.Close()
 

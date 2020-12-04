@@ -23,12 +23,21 @@ def move_frames_by(opts, obj_elem):
     for layer in obj_elem.getElementsByTagName('layer'):
         if (layer.attributes["type"].value == LAYER_TYPE_BITMAP and
             layer.attributes["name"].value in move_layers):
+
             for elem in imgs(layer):
                 if frnr(elem) in frnr_rng:
-                    cln_elem = elem.cloneNode(1)
-                    cln_elem.attributes['topLeftX'] = str(tlx(elem) + x_delta)
-                    cln_elem.attributes['topLeftY'] = str(tly(elem) + y_delta)
-                    layer.replaceChild(cln_elem, elem)
+                    if opts.abscoords:
+                        if (not opts.y_only):
+                            elem.attributes['topLeftX'] = str(opts.x_abscoords)
+                        if (not opts.x_only):
+                            elem.attributes['topLeftY'] = str(opts.y_abscoords)
+                    else:
+                        if (not opts.y_only):
+                            elem.attributes['topLeftX'] = str(
+                                tlx(elem) + x_delta)
+                        if (not opts.x_only):
+                            elem.attributes['topLeftY'] = str(
+                                tly(elem) + y_delta)
 
 
 # flop is horizontal flip - flop all images in the pclx (except vec)
@@ -38,14 +47,22 @@ def mirror_frames(opts, obj_elem):
 
     frm_rng = compute_frame_range(opts)
 
+    prgstr = ""
     for layer in obj_elem.getElementsByTagName('layer'):
         if (layer.attributes["type"].value == LAYER_TYPE_BITMAP and
             layer.attributes["name"].value in apply_to_layers):
 
+            prgstr = "{},{}".format(layer.attributes["name"].value,prgstr)
+            opts.progress(prgstr)
+
+            if opts.all_frames:
+                frnrs   = [frnr(elem) for elem in imgs(layer)]
+                frm_rng = range(min(frnrs), max(frnrs) + 1)
+
             for elem in imgs(layer):
                 if frnr(elem) in frm_rng:
-                    oper = "-flip"
-                    if opts.horizontal_flip: oper = "-flop"
+                    oper = "-flop"
+                    if opts.horizontal_flip: oper = "-flip"
 
                     subprocess.call("{} {} data/{} data/{}".format(
                         CONVERT_EXE, oper, src(elem), src(elem)), shell=True)
@@ -89,6 +106,9 @@ def delete_frames(opts, obj_elem):
 
             prgstr = "{},{}".format(layer.attributes["name"].value,prgstr)
             opts.progress(prgstr)
+
+            if opts.all_frames:
+                rng = range(1, max([frnr(e) for e in imgs(layer)]) + 1)
 
             for elem in imgs(layer):
                 if frnr(elem) in rng:
@@ -364,7 +384,7 @@ def make_movie(opts, obj_elem):
 
     os.chdir("/")
     opts.done_doing()
-    return movie_name
+    opts.new_movie_file(movie_name)
 
 
 def rotate_frames(opts,obj_elem):
@@ -484,8 +504,6 @@ def duplicate_frames(opts, obj_elem):
     apply_to_layers = (opts.layers and opts.layers.split(",")) or (
         [elem.attributes["name"].value for elem in layers(obj_elem)])
 
-    frame_rng = range(opts.from_frame, opts.to_frame+1)
-
     prgstr = ""
     for layer in layers(obj_elem):
         if (layer.attributes["type"].value == LAYER_TYPE_BITMAP and
@@ -499,8 +517,12 @@ def duplicate_frames(opts, obj_elem):
             if opts.all_frames:
                 opts.to_frame   = last_frame_nr
                 opts.from_frame = min([frnr(e) for e in imgs(layer)])
-                frame_rng       = range(opts.from_frame, opts.to_frame+1)
+            else:
+                frnums = [frnr(e) for e in imgs(layer)]
+                opts.to_frame   = min([ max(frnums), opts.to_frame ])
+                opts.from_frame = max([ min(frnums), opts.from_frame ])
 
+            frame_rng = range(opts.from_frame, opts.to_frame + 1)
             frames_to_copy, ref_frame, last_frame, all_imgs = {}, None, None, {}
 
             for elem in imgs(layer):
@@ -536,9 +558,6 @@ def duplicate_frames(opts, obj_elem):
             ## "as they are" from the previous location, and include the initial
             ## frame.
             if opts.keep_position or opts.duplicate_all:
-                # because frames can be empty, i.e. non-existent, increment
-                # frame number by hand instead. last_frame pointer instead
-                # is just used to insert new frames into the DOM tree.
                 new_frame_nr = opts.to_frame + 1
 
                 if opts.duplicate_all:
@@ -606,6 +625,27 @@ def duplicate_frames(opts, obj_elem):
                                     tly(last_frame) + frm_dtls["diff_y"])
 
                             last_frame = layer.insertBefore(cln_elem, last_frame)
+
+
+# remove all empty frames from a layer and move existing frames up
+# correspondingly.
+def compact_layers(opts, obj_elem):
+    apply_to_layers = (opts.layers and opts.layers.split(",")) or (
+        [elem.attributes["name"].value for elem in layers(obj_elem)])
+
+    for layer in layers(obj_elem):
+        if (layer.attributes["type"].value == LAYER_TYPE_BITMAP and
+            layer.attributes["name"].value in apply_to_layers):
+
+            opts.progress(layer.attributes["name"].value)
+
+            current_frame_nr = 1
+            for elem in sorted(imgs(layer), key=frnr):
+                if frnr(elem) != current_frame_nr:
+                    orig_src, old_frm_nr = src(elem), frnr(elem)
+                    elem.attributes["frame"] = str(current_frame_nr)
+                    elem.attributes["src"] = cpf(elem, current_frame_nr)
+                current_frame_nr += 1
 
 # duplicate an entire layer...
 def duplicate_layers(opts, obj_elem):
@@ -752,6 +792,19 @@ def obtain_info(opts, obj_elem, toStdout=False):
 
         if layer.attributes["type"].value == LAYER_TYPE_BITMAP:
             frame_nums = [frnr(e) for e in imgs(layer)]
+
+            if frame_nums == []:
+                info["layers"][layer.attributes["id"].value] = {
+                    "name":          layer.attributes["name"].value,
+                    "diff_x":        0,
+                    "diff_y":        0,
+                    "visible":       layer.attributes["visibility"].value == "1",
+                    "frame_count":   0,
+                    "frame_numbers": [],
+                    "frame_details": {}
+                }
+                continue
+
             max_frame_nr = max(frame_nums)
             min_frame_nr = min(frame_nums)
 

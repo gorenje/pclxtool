@@ -5,7 +5,7 @@ import PySimpleGUIQt as sg
 from gui import icons, helpers
 from PIL import Image
 
-BlackWhite = ("black","white")
+from .helpers import BlackWhite
 
 def create_info_window(glbls, obj_elem):
     frames = []
@@ -156,7 +156,7 @@ def toolbar_buttons():
              ]]),
          sg.Column([
              [
-                 sg.B('Constant Move',
+                 sg.B('Move',
                       button_color=BlackWhite,
                       pad=(2,2), size=(13,1),
                       key='moveframes'),
@@ -178,14 +178,14 @@ def toolbar_buttons():
                       pad=(2,2), size=(13,1),
                       key='deleteframes'),
              ],[
-                 sg.B('Multi-Copy',
+                 sg.B('Interframe Copy',
                       button_color=BlackWhite,
                       pad=(2,2), size=(13,1),
                       key='multicopyframes'),
              ]]),
          sg.Column([
              [
-                 sg.B('Duplicate with Move',
+                 sg.B('Copy with Move',
                       button_color=BlackWhite,
                       pad=(2,2), size=(13,1),
                       key='duplicate'),
@@ -204,11 +204,15 @@ def main_window_layout():
         ],
         [
             sg.Checkbox('Open new Pclx in Pencil2d?',
-                        size=(30,1),
+                        size=(25,1),
                         key="open_new_pclx_in_p2d",
                         default=True),
             sg.Checkbox('Immediate Load new Pclx?',
+                        size=(25,1),
                         key="load_new_pclx_file",
+                        default=True),
+            sg.Checkbox('Immediate open movie files?',
+                        key="open_new_movie_files",
                         default=True)
         ],
         [
@@ -229,7 +233,7 @@ def main_window_layout():
                 ],
             ]),
             sg.Column([
-                [sg.B('Add Images',
+                [sg.B('Create Image Layers',
                      tooltip="Add images to Pclx - one per layer",
                      button_color=BlackWhite,
                      pad=(2,2), size=(13,1), key='addimages')
@@ -251,6 +255,11 @@ def main_window_layout():
                 ]
             ]),
             sg.Column([
+                [sg.B('Compact Layers',
+                     tooltip="Remove empty frames from layers",
+                     button_color=BlackWhite,
+                     pad=(2,2), size=(13,1), key='compactlayers')
+                ],
                 [sg.B('Make Movie',
                      tooltip="Make Apple ProRes Movie",
                      button_color=BlackWhite,
@@ -263,246 +272,6 @@ def main_window_layout():
                  size=(65, 1),
                  pad=(0, 3),
                  key='-status-')]
-    ]
-
-def make_movie_layout(pclx_infos, ffmpeg_profiles, prores_profiles):
-    ## TODO support multiple camera views by providing a dropdown with
-    ## TODO all available camera views.
-    cvinfos = pclx_infos["cv"][list(pclx_infos["cv"].keys())[0]]
-
-    return [
-        [sg.Text('Encoding Profile',
-                 relief=sg.RELIEF_SUNKEN, size=(20, 1), pad=(0, 3)),
-         sg.Combo([""]+list(ffmpeg_profiles.keys()),
-                  auto_size_text=True,
-                  size=(200,20),
-                  key="encoding_profile",
-                  default_value="",
-                  enable_events=True)
-        ],
-        [
-            sg.HorizontalSeparator(pad=(200,1)),
-        ],
-
-        [sg.Text('Width', relief=sg.RELIEF_SUNKEN, size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text=cvinfos["width"], key="width")
-        ],
-
-        [sg.Text('Height', relief=sg.RELIEF_SUNKEN, size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text=cvinfos["height"], key="height")
-        ],
-
-        [sg.Text('FPS', relief=sg.RELIEF_SUNKEN, size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text=pclx_infos["fps"] or "30", key="fps")
-        ],
-
-        [
-            sg.Text('Profile',
-                    relief=sg.RELIEF_SUNKEN,
-                    size=(20, 1),
-                    pad=(0, 3)),
-            sg.Combo(list(prores_profiles.values()),
-                     auto_size_text=True,
-                     size=(200,20),
-                     key="profile",
-                     default_value=prores_profiles[5])
-        ],
-        [sg.Button('Ok',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   bind_return_key=True,
-                   key="doit"),
-         sg.VerticalSeparator(),
-         sg.Button('Cancel',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   key="-close-")
-        ],
-        [sg.Text('', relief=sg.RELIEF_SUNKEN,
-                 size=(55, 1), pad=(0, 3), key='-status-')]
-    ]
-
-def scale_layout():
-    return [
-        [sg.Text('Scale an image by percent. Scale step is additive and\n'+
-                 'is increment which each frame. If duplicate is checked,\n'+
-                 'then to frame is ignoreed and count number of from-frames\n'+
-                 'are created and then scaled. If scaling by constant is \n'+
-                 'selected, then that scaling factor will be used for all \n'+
-                 'frames.')
-        ],
-        [sg.Text('Start Frame', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="1", key="from_frame")],
-
-        [sg.Text('End Frame', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="10", key="to_frame")],
-
-        [sg.Checkbox('Constant Scaling', key="scale_constant",
-                     default=False,
-                     enable_events=True)],
-
-        [sg.Text('Scale Factor', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="1.0", key="scale_step")],
-
-        [sg.Text('Scale Start', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="100", key="scale_start")],
-
-        [sg.Checkbox('Duplicate Frames', key="duplicate",
-                     default=False,
-                     enable_events=True)],
-
-        [sg.Text('Count', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="10",
-                      key="count",
-                      disabled=True)],
-
-        [sg.Button('Ok',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   bind_return_key=True,
-                   key="doit"),
-         sg.VerticalSeparator(),
-         sg.Button('Cancel',button_color=BlackWhite,
-               pad=(10,7), border_width=2, size=(7,1),
-               key="-close-")],
-        [sg.Text('', relief=sg.RELIEF_SUNKEN,
-                 size=(55, 1), pad=(0, 3), key='-status-')]
-    ]
-
-def move_along_path_layout():
-    return [
-        [
-            sg.Text('Start Frame', relief=sg.RELIEF_SUNKEN,
-                    size=(20, 1), pad=(0, 3)),
-            sg.InputText(default_text="1", key="from_frame")],
-        [
-            sg.Text('End Frame', relief=sg.RELIEF_SUNKEN,
-                    size=(20, 1), pad=(0, 3)),
-            sg.InputText(default_text="10", key="to_frame")
-        ],
-
-        [
-            sg.InputText(default_text='',
-                         key='FILENAME',
-                         size=(20, 1),
-                         enable_events=True),
-            sg.Button('Browse', size=(7,1),
-                      button_color=BlackWhite,
-                      enable_events=True,
-                      key="browse")
-        ],
-
-        [
-            sg.Text('Count', relief=sg.RELIEF_SUNKEN,
-                    size=(20, 1), pad=(0, 3)),
-            sg.InputText(default_text="10",
-                         key="count",
-                         disabled=True)
-        ],
-        [sg.Button('Ok',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   bind_return_key=True,
-                   key="doit"),
-         sg.VerticalSeparator(),
-         sg.Button('Cancel',button_color=BlackWhite,
-               pad=(10,7), border_width=2, size=(7,1),
-               key="-close-")],
-        [sg.Text('', relief=sg.RELIEF_SUNKEN,
-                 size=(55, 1), pad=(0, 3), key='-status-')]
-    ]
-
-def reverse_frames_layout():
-    return [
-        [
-            sg.Checkbox('Reverse All Frames', key="reverse_all_frames",
-                        default=True, enable_events=True)
-        ],
-        [
-            sg.Text('Start Frame', relief=sg.RELIEF_SUNKEN,
-                    size=(10, 1), pad=(0, 3)),
-            sg.InputText(default_text="1", key="from_frame", disabled=True)
-        ],
-        [
-            sg.Text('End Frame', relief=sg.RELIEF_SUNKEN,
-                    size=(10, 1), pad=(0, 3)),
-            sg.InputText(default_text="10", key="to_frame", disabled=True)
-        ],
-
-        [sg.Button('Ok',button_color=BlackWhite,
-               pad=(10,7), border_width=2, size=(7,1),
-                   bind_return_key=True,
-               key="doit"),
-         sg.VerticalSeparator(),
-         sg.Button('Cancel',button_color=BlackWhite,
-               pad=(10,7), border_width=2, size=(7,1),
-               key="-close-")],
-        [sg.Text('', relief=sg.RELIEF_SUNKEN,
-                 size=(55, 1), pad=(0, 3), key='-status-')]
-    ]
-
-def move_frames_layout():
-    return [
-        [
-            sg.Button('', image_data=icons.coords64)
-        ],
-        [
-            sg.Text('X Delta', relief=sg.RELIEF_SUNKEN,
-                    size=(10, 1), pad=(0, 3)),
-            sg.InputText(default_text="0", key="x_delta"),
-            sg.Text('Y Delta', relief=sg.RELIEF_SUNKEN,
-                    size=(10, 1), pad=(0, 3)),
-            sg.InputText(default_text="0", key="y_delta")
-        ],
-
-        [
-            sg.Text('Start Frame', relief=sg.RELIEF_SUNKEN,
-                    size=(10, 1), pad=(0, 3)),
-            sg.InputText(default_text="1", key="from_frame"),
-
-            sg.Text('End Frame', relief=sg.RELIEF_SUNKEN,
-                    size=(10, 1), pad=(0, 3)),
-            sg.InputText(default_text="10", key="to_frame"),
-            sg.Checkbox('All Frames', key="move_all_frames",
-                        default=False, enable_events=True)
-        ],
-
-        [
-            sg.Button('Ok',button_color=BlackWhite,
-                      pad=(10,7), border_width=2, size=(7,1),
-                   bind_return_key=True,
-                      key="doit"),
-            sg.VerticalSeparator(),
-            sg.Button('Cancel',button_color=BlackWhite,
-                      pad=(10,7), border_width=2, size=(7,1),
-                      key="-close-")
-        ],
-
-        [sg.Text('', relief=sg.RELIEF_SUNKEN,
-                 size=(55, 1), pad=(0, 3), key='-status-')]
-    ]
-
-
-def delete_frames_layout():
-    return [
-        [sg.Text('Start Frame', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="1", key="from_frame")],
-        [sg.Text('End Frame', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="10", key="to_frame")],
-        [sg.Checkbox('Delete Frames', key="delete_frames")],
-        [sg.Button('Ok',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   bind_return_key=True,
-                   key="doit"),
-         sg.VerticalSeparator(),
-         sg.Button('Cancel',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   key="-close-")],
-        [sg.Text('', relief=sg.RELIEF_SUNKEN,
-                 size=(55, 1), pad=(0, 3), key='-status-')]
     ]
 
 def no_image_data():
@@ -525,249 +294,6 @@ def show_frame_layout(image_data, tlx, tly):
         [
             sg.Image(data=helpers.to_png(img))
         ]
-    ]
-
-def rotate_layout():
-    return [
-        [sg.Text(
-            'Rotate frames by degrees. If you want to rotate an image\n'+
-            'about its center, without cropping, then extend its canvas\n'+
-            'beforehand.\n'
-        )],
-
-        [sg.Text('Start Frame', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="1", key="from_frame")],
-
-        [sg.Text('End Frame', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="1", key="to_frame")
-        ],
-
-        [sg.Checkbox('Constant Rotating', key="rotate_constant",
-                     default=False,
-                     enable_events=True)],
-
-        [sg.Text('Rotate Step', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="1.5", key="rotate_step")
-        ],
-
-        [sg.Text('Rotate Start', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="0", key="rotate_start")
-        ],
-
-        [sg.Checkbox('Extend canvas before rotation',
-                     key="extend_frames", default=False, enable_events=True)
-        ],
-        [
-            sg.Text('Extend To', relief=sg.RELIEF_SUNKEN,
-                    size=(20, 1), pad=(0, 3)),
-            sg.InputText(default_text="0",
-                         key="extent_x",
-                         enable_events=True,
-                         disabled=True),
-            sg.Text(',', size=(2, 1), pad=(0, 1)),
-            sg.InputText(default_text="0", key="extent_y",disabled=True)
-        ],
-
-        [
-            sg.Checkbox('Duplicate Frames', key="duplicate",
-                        default=False,
-                        enable_events=True)
-        ],
-
-        [sg.Text('Count', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="10", key="count", disabled=True)
-        ],
-
-        [sg.Button('Ok',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   bind_return_key=True,
-                   key="doit"),
-         sg.VerticalSeparator(),
-         sg.Button('Cancel',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   key="-close-")],
-        [sg.Text('', relief=sg.RELIEF_SUNKEN,
-                 size=(40, 1), pad=(0, 3), key='-status-')]
-    ]
-
-def gradient_frames_layout(pclx_infos):
-    cvinfos = pclx_infos["cv"][list(pclx_infos["cv"].keys())[0]]
-
-    return [
-        [sg.Text("Start Frame",
-                 relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="1", key="from_frame")],
-
-        [sg.Text('Count', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="10", key="count")],
-
-
-        [sg.Text('Start Color (#rrggbb)', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="#ffffff", key="start_color")],
-
-        [sg.Text('End Color (#rrggbb)', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="#000000", key="end_color")],
-
-        [sg.Text('Width', relief=sg.RELIEF_SUNKEN, size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text=cvinfos["width"], key="width")
-        ],
-
-        [sg.Text('Height', relief=sg.RELIEF_SUNKEN, size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text=cvinfos["height"], key="height")
-        ],
-
-        [sg.Button('Ok',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   bind_return_key=True,
-                   key="doit"),
-         sg.VerticalSeparator(),
-         sg.Button('Cancel',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   key="-close-")],
-        [sg.Text('', relief=sg.RELIEF_SUNKEN,
-                 size=(55, 1), pad=(0, 3), key='-status-')]
-    ]
-
-
-def mirror_frames_layout():
-    return [
-        [sg.Text('Start Frame', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="1", key="from_frame")
-        ],
-
-        [sg.Text('End Frame', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="10", key="to_frame")
-        ],
-
-        [
-            sg.Radio('Vertical Flip', group_id="a",
-                     key="vertical_flip", default=True),
-        ],[
-            sg.Radio('Horizonal Flip', group_id="a",
-                     key="horizontal_flip"),
-        ],
-
-        [sg.Button('Ok',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   bind_return_key=True,
-                   key="doit"),
-         sg.VerticalSeparator(),
-         sg.Button('Cancel',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   key="-close-")],
-        [sg.Text('', relief=sg.RELIEF_SUNKEN,
-                 size=(55, 1), pad=(0, 3), key='-status-')]
-    ]
-
-def duplicate_layout():
-    return [
-        [sg.Text("Start Frame (Won't be duplicated)",
-                 relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="1", key="from_frame")],
-
-        [sg.Text('End Frame', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="10", key="to_frame")],
-
-        [sg.Checkbox('All Frames', key="all_frames", enable_events=True)],
-
-        [sg.Text('Repeat Count', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="2", key="count")],
-
-        [
-            sg.Radio('Move All Elements',
-                     group_id="a",
-                     key="move_all_elements", default=True),
-        ],[
-            sg.Radio('Move Along X only',
-                     group_id="a",
-                     key="only_x"),
-        ],[
-            sg.Radio('Move Along Y Only',
-                     group_id="a",
-                     key="only_y"),
-        ],[
-            sg.Radio('No Move, Duplicate excluding start frame',
-                     group_id="a",
-                     key="keep_position"),
-        ],[
-            sg.Radio('No Move, Duplicate including Start Frame',
-                     group_id="a",
-                     key="duplicate_all"),
-        ],
-
-        [sg.Checkbox('Move existing frames', key="move_existing")],
-
-        [sg.Button('Ok',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   bind_return_key=True,
-                   key="doit"),
-         sg.VerticalSeparator(),
-         sg.Button('Cancel',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   key="-close-")],
-        [sg.Text('', relief=sg.RELIEF_SUNKEN,
-                 size=(55, 1), pad=(0, 3), key='-status-')]
-    ]
-
-def multicopy_frames_layout():
-    return [
-        [sg.Text("Start Frame",
-                 relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="1", key="from_frame")],
-
-        [sg.Text('End Frame', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="10", key="to_frame")],
-
-        [sg.Text('Count', relief=sg.RELIEF_SUNKEN,
-                 size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="2", key="count")],
-
-        [sg.Button('Ok',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   bind_return_key=True,
-                   key="doit"),
-         sg.VerticalSeparator(),
-         sg.Button('Cancel',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   key="-close-")],
-        [sg.Text('', relief=sg.RELIEF_SUNKEN,
-                 size=(55, 1), pad=(0, 3), key='-status-')]
-    ]
-
-def duplicate_layers_layout():
-    return [
-        [
-            sg.Text('Count', relief=sg.RELIEF_SUNKEN,
-                    size=(20, 1), pad=(0, 3)),
-            sg.InputText(default_text="2", key="count")
-        ],
-
-        [sg.Button('Ok',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   bind_return_key=True,
-                   key="doit"),
-         sg.VerticalSeparator(),
-         sg.Button('Cancel',button_color=BlackWhite,
-                   pad=(10,7), border_width=2, size=(7,1),
-                   key="-close-")],
-        [sg.Text('', relief=sg.RELIEF_SUNKEN,
-                 size=(55, 1), pad=(0, 3), key='-status-')]
     ]
 
 def error_layout(exception):

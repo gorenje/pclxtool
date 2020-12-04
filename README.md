@@ -38,6 +38,7 @@ PclxTool opens the Zip and applies changes to the XML and PNG files (mostly
 directly on the PNGs). It will then create a new pclx file with those changes,
 the original pclx file is never changed.
 
+PclxTool only works on Bitmap layers, Vector layers are ignored.
 
 Installation
 ---
