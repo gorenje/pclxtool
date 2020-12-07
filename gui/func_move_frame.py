@@ -1,12 +1,12 @@
 from .extensions import Options
 from .helpers    import *
-from .icons      import coords64
 from .layouts    import sg, ButtonsAndStatus
 
 def move_frames_layout():
     return [
         [
-            sg.Button('', image_data=coords64)
+            sg.Image(data=open( os.path.dirname(os.path.abspath(__file__)) +
+                                "/../assets/move.png", mode="rb" ).read())
         ],
         [
             sg.Radio('All', group_id="a",

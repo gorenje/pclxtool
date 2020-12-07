@@ -44,8 +44,13 @@ def move_along_path_event_handler(glbls, subwindows, window_name, target):
 
     if event == "browse":
         windw["browse"].Update(disabled=True)
-        filename = sg.PopupGetFile("Find SVG",
-                                   file_types=(("SVGs","*.svg"),))
+        path = (os.path.dirname(os.path.abspath(__file__)) +
+                "/../assets/example")
+
+        filename = sg.PopupGetFile("Load SVG",
+                                   file_types=(("SVGs","*.svg"),),
+                                   default_path=path
+        )
         if filename: windw['FILENAME'].Update(filename)
         windw["browse"].Update(disabled=False)
 

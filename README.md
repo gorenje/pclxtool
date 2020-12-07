@@ -40,6 +40,26 @@ the original pclx file is never changed.
 
 PclxTool only works on Bitmap layers, Vector layers are ignored.
 
+
+Prerequistes
+---
+
+PclxTool assumes that both image magick and ffmpeg are installed and can
+be found at:
+
+```
+CONVERT_EXE  = "/usr/local/bin/convert"
+FFMPEG_EXE   = "/usr/local/bin/ffmpeg"
+```
+
+Also Pencil2D is assumed to be installed at:
+
+```
+PENCIL2D_APP = "/Applications/Pencil2D.app/Contents/MacOS/pencil2d"
+```
+
+Again, this was tested on MacOS only...
+
 Installation
 ---
 

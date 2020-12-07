@@ -18,11 +18,15 @@ def gradient_background_layout(pclx_infos):
 
         [sg.Text('Start Color (#rrggbb)', relief=sg.RELIEF_SUNKEN,
                  size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="#ffffff", key="start_color")],
+         sg.InputText(default_text="#1f262c", key="start_color")],
 
         [sg.Text('End Color (#rrggbb)', relief=sg.RELIEF_SUNKEN,
                  size=(20, 1), pad=(0, 3)),
-         sg.InputText(default_text="#000000", key="end_color")],
+         sg.InputText(default_text="#b6e0fd", key="end_color"),
+         sg.B('Swap', key='swap_colors',
+              size=(5,0.5),
+              button_color=BlackWhite)
+        ],
 
         [sg.Text('Width', relief=sg.RELIEF_SUNKEN, size=(20, 1), pad=(0, 3)),
          sg.InputText(default_text=cvinfos["width"], key="width")
@@ -35,6 +39,11 @@ def gradient_background_layout(pclx_infos):
 
 def gradient_background_event_handler(glbls, subwindows, window_name, target):
     windw, event, values = obtain_subevent(subwindows, window_name)
+
+    if event == "swap_colors":
+        start_color = values['start_color']
+        windw['start_color'].Update( values['end_color'] )
+        windw['end_color'].Update( start_color )
 
     if event == "doit":
         windw['-status-'].Update("Gradient Frames")

@@ -204,11 +204,14 @@ def run_as_gui():
                 glbls.main_window['-status-'].Update("No PCLX file loaded")
                 continue
 
-            folder = sg.popup_get_folder(
+            folder = sg.PopupGetFolder(
                 ('Source folder for images. Directory (and subdirectories) \n'+
                  'will be recursively searched for image files (png, jpg, \n'+
                  'gif) and added as a new layer. One layer, one image.'),
-                size=(200,200), title='Select Image Folder')
+                default_path=(
+                    os.path.dirname(os.path.abspath(__file__)) +
+                    "/assets/example/elements"),
+                title='Select Image Folder')
 
             if not folder: continue
 
@@ -259,6 +262,11 @@ def run_as_gui():
 
             glbls.main_window["browse"].Update(disabled=False,
                                                button_color=BlackWhite)
+
+        if event == "load_empty":
+            glbls.main_window['FILENAME'].Update(
+                os.path.dirname(os.path.abspath(__file__)) + "/assets/empty.pclx"
+            )
 
         if event == 'FILENAME':
             if values['FILENAME'] == "" or values['FILENAME'] == None:

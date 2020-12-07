@@ -682,11 +682,7 @@ def duplicate_layers(opts, obj_elem):
 
 # Add images to the pclx, one new layer per image
 def add_images_as_layers(opts, obj_elem):
-    namesonly = [f for f in (
-        glob.glob(opts.folder + "/*.png") +
-        glob.glob(opts.folder + "/*.jpeg") +
-        glob.glob(opts.folder + "/*.jpg") +
-        glob.glob(opts.folder + "/*.gif") +
+    filenames = [f for f in (
         glob.glob(opts.folder + "/**/*.png", recursive=True) +
         glob.glob(opts.folder + "/**/*.jpeg",recursive=True) +
         glob.glob(opts.folder + "/**/*.jpg", recursive=True) +
@@ -702,7 +698,7 @@ def add_images_as_layers(opts, obj_elem):
             base_image = imgs(layer)[0].cloneNode(0)
             break
 
-    for f in namesonly:
+    for f in filenames:
         opts.progress(f)
         cln_layer = base_layer.cloneNode(0)
         cln_img = base_image.cloneNode(0)
@@ -711,8 +707,10 @@ def add_images_as_layers(opts, obj_elem):
         cln_layer.attributes["id"] = str(new_id_value)
         cln_layer.attributes["name"] = bsn(f)
 
-        subprocess.call("{} '{}' -alpha set data/{}".format(
-            CONVERT_EXE, f, filename), shell=True)
+        # reduce the image to a bear minimum, removing any empty landscape and
+        # convert to png.
+        with pilImg.open(f) as img:
+            img.crop(img.getbbox()).save("data/{}".format(filename))
 
         cln_img.attributes["src"] = filename
         cln_img.attributes["frame"] = "1"
@@ -726,7 +724,7 @@ def add_images_as_layers(opts, obj_elem):
 def gradient_frames(opts,obj_elem):
     strt_color = clr.Color(opts.start_color)
     end_color  = clr.Color(opts.end_color)
-    clr_range  = [c for c in strt_color.range_to(end_color, opts.count + 1)]
+    clr_range  = [c for c in strt_color.range_to(end_color, opts.count)]
 
     # 0,0 is middle and topleft is -X,-Y, half of the camera view.
     loc = fg.Point( -opts.width, -opts.height ) * (1/2.0)
@@ -749,7 +747,7 @@ def gradient_frames(opts,obj_elem):
 
             if cln_frame == None: continue
 
-            for fnr in range(opts.from_frame, opts.count+opts.from_frame+1):
+            for fnr in range(opts.from_frame, opts.count+opts.from_frame):
                 opts.progress("{} - {}".format(prgstr, fnr))
 
                 elem = None

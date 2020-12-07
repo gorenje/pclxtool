@@ -2,7 +2,7 @@ import io, PIL
 
 import PySimpleGUIQt as sg
 
-from gui import icons, helpers
+from gui import helpers
 from PIL import Image
 
 from .helpers import BlackWhite
@@ -77,7 +77,6 @@ def create_info_window(glbls, obj_elem):
                             text_color="Black",
                             size=(5, 1), pad=(0, 3))
                 ],
-
                 [
                     sg.Text("Diff Y",
                             relief=sg.RELIEF_SUNKEN,
@@ -88,8 +87,7 @@ def create_info_window(glbls, obj_elem):
                             relief=sg.RELIEF_SUNKEN,
                             text_color="Black",
                             size=(5, 1), pad=(0, 3))
-                    ],
-
+                ],
                 [
                     sg.Text("Frames",
                             tooltip="X Diff",
@@ -133,9 +131,10 @@ def create_info_window(glbls, obj_elem):
                      pad=(10,10))
         ])
 
+    height = min([1000, (len(infos["layers"].keys()) * 200) + 70])
     return sg.Window(glbls.srcFileName,
                      layout=[[sg.Column(frames, scrollable=True,
-                                        size=(1000,1500))]],
+                                        size=(1000,height))]],
                      grab_anywhere=False,
                      font=('Helvetica', 12),
                      no_titlebar=False,
@@ -242,19 +241,20 @@ def main_window_layout():
                 [sg.B('Update',
                       tooltip="Update the current Pclx",
                       button_color=BlackWhite,
-                      pad=(0,0), size=(10,1), key='update'),
-                 sg.VerticalSeparator(pad=(10,10)),
-                 sg.B('Unload',
-                      tooltip="Unload the current Pclx",
-                      button_color=BlackWhite,
-                      pad=(0,0), size=(10,1), key='unload'),
-                 sg.VerticalSeparator(pad=(10,10)),
+                      size=(10,1),
+                      key='update'),
+                 sg.VerticalSeparator(pad=(4,4)),
                  sg.B('Browse',
                       tooltip="Unload the current Pclx",
                       button_color=BlackWhite,
-                      pad=(0,0), size=(10,1),
-                      enable_events=True,
-                      key='browse')
+                      size=(10,1),
+                      key='browse'),
+                 sg.VerticalSeparator(pad=(4,4)),
+                 sg.B('Load Empty Pclx',
+                      tooltip="Unload the current Pclx",
+                      button_color=BlackWhite,
+                      size=(10,1),
+                      key='load_empty'),
                 ],
             ]),
             sg.Column([
