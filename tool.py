@@ -22,6 +22,8 @@ from globals import FFMPEG_PRORES_PROFILES, FFMPEG_PROFILES, EMACS_CLIENT
 
 sg.theme('SystemDefault')
 
+HomeBase = os.path.dirname(os.path.abspath(__file__))
+
 ##
 ## Command line handler
 ##
@@ -208,9 +210,7 @@ def run_as_gui():
                 ('Source folder for images. Directory (and subdirectories) \n'+
                  'will be recursively searched for image files (png, jpg, \n'+
                  'gif) and added as a new layer. One layer, one image.'),
-                default_path=(
-                    os.path.dirname(os.path.abspath(__file__)) +
-                    "/assets/example/elements"),
+                default_path=(HomeBase + "/assets/example/elements"),
                 title='Select Image Folder')
 
             if not folder: continue
@@ -264,9 +264,7 @@ def run_as_gui():
                                                button_color=BlackWhite)
 
         if event == "load_empty":
-            glbls.main_window['FILENAME'].Update(
-                os.path.dirname(os.path.abspath(__file__)) + "/assets/empty.pclx"
-            )
+            glbls.main_window['FILENAME'].Update(HomeBase + "/assets/empty.pclx")
 
         if event == 'FILENAME':
             if values['FILENAME'] == "" or values['FILENAME'] == None:
