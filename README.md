@@ -107,12 +107,12 @@ goes through the steps for creating a simple cut-out animation. The
 screencast is broken up into sequences, each of which demostrate a
 particular functionality of PclxTool.
 
-1. Installation - https://youtu.be/3M8wGqZY7XU
+1. [Installation](https://youtu.be/3M8wGqZY7XU)
 
 PclxTool is a Python-based GUI tool. It uses PySimpleGuiQt as GUI engine
 and has been tested on MacOS.
 
-2. Interface - https://youtu.be/3M8wGqZY7XU?t=15
+2. [Interface](https://youtu.be/3M8wGqZY7XU?t=15)
 
 PclxTool has one main window for loading Pclx files and apply specific
 operations to the file loaded. When a Pencil2D file is loaded, a second
@@ -125,13 +125,13 @@ in the layer window.
 An operation also has specific parameters and these are shown in the operation
 window that is opened when an operation is triggered.
 
-3. Opening Pclx files - https://youtu.be/3M8wGqZY7XU?t=37
+3. [Opening Pclx files](https://youtu.be/3M8wGqZY7XU?t=37)
 
 Pencil2D files can either be opened by dragging them onto PclxTool or by
 using the browse button in the main window. In the screencast, only the
 drag and drop functionality is demostrated.
 
-4. Importing Images - https://youtu.be/3M8wGqZY7XU?t=58
+4. [Importing Images](https://youtu.be/3M8wGqZY7XU?t=58)
 
 This might seem counterintuitive since Pencil2D already has good support
 for image importing. The difference is that, unlike P2D, PclxTool generates
@@ -139,7 +139,7 @@ new layers for each image imported. P2D imports images into a single layer,
 each image being a new frame. I didn't find a good way to move images
 between layers (other than copying and pasting).
 
-5. Moving along an arc - https://youtu.be/3M8wGqZY7XU?t=94
+5. [Moving along an arc](https://youtu.be/3M8wGqZY7XU?t=94)
 
 Having objects move at constant speed along a path is something that is
 difficult to animate. PclxTool provides functionality that allows the user
@@ -149,7 +149,7 @@ an object will be moved.
 The user provides the bezier and the number of frames that it should take for
 the object to travel the entire path.
 
-6. Moving along a line - https://youtu.be/3M8wGqZY7XU?t=188
+6. [Moving along a line](https://youtu.be/3M8wGqZY7XU?t=188)
 
 Similiar to moving along a path however this takes two frames and moves
 object in a straight between the those two frames. New frames are generated
@@ -173,7 +173,7 @@ Image    ii@0,0  i1@1,1  i1@2,2  i1@3,3 .... i1@7,7  i1@8,8  i1@9,9  i2@10,10
 It doesn't matter what image is in frame 11, of importance is its location
 in frame 11.
 
-7. Gradients - https://youtu.be/3M8wGqZY7XU?t=294
+7. [Gradients](https://youtu.be/3M8wGqZY7XU?t=294)
 
 A gradient frame is a flood-filled single-colour image of the same dimensions
 as the camera view.
@@ -182,7 +182,7 @@ Gradient frames, as shown in the screencast, can be used to create a background
 sky that goes from dark, to blue, to dark again. In the case of the screencast,
 this was on conjunction with the sun rising and setting again.
 
-8. Rotation - https://youtu.be/3M8wGqZY7XU?t=456
+8. [Rotation](https://youtu.be/3M8wGqZY7XU?t=456)
 
 P2D also provides rotation however it is hard to make this constant over
 several frames. The rotation operator takes a frame range and rotates all
@@ -192,7 +192,7 @@ that is additive.
 Example: a rotation factor of 8 degrees would rotate the first frame by 8 degs,
 the second is rotated by 16 deg, the 3rd by 24 and so on.
 
-9. Scaling - https://youtu.be/3M8wGqZY7XU?t=559
+9. [Scaling](https://youtu.be/3M8wGqZY7XU?t=559)
 
 Similiar to rotation, scaling scales image, frame for frame, either up
 or down. This can be useful for things that get successively smaller as
@@ -203,14 +203,14 @@ image, not the image in the previous frame. This means that PclxTool does not
 rotate or scale image multiple times, instead each rotation and scaling is based
 on the original image.
 
-10. Frame duplication - https://youtu.be/3M8wGqZY7XU?t=686
+10. [Frame duplication](https://youtu.be/3M8wGqZY7XU?t=686)
 
 To repeat certain movements over and over again, it's useful to have frame
 duplication. In the screencast, this is a sway tree that (rather mechanically)
 sways in the wind. The idea is to take a small group of frames, create some
 form of movement, then duplicate that entire group to repeat that movement.
 
-11. Copy with Move - https://youtu.be/3M8wGqZY7XU?t=772
+11. [Copy with Move](https://youtu.be/3M8wGqZY7XU?t=772)
 
 Copy with move is useful for character movement. The basic idea is that
 you have a series of images that form the basis for a walk. As the character
@@ -247,7 +247,7 @@ Also image i1 was copied into frame 4 so that we have a distance value between
 it and image i3 in frame 3, else it would not be possible to know where to
 place image i1 in frame 4.
 
-12. Make ProRes Movies - https://youtu.be/3M8wGqZY7XU?t=862
+12. [Make ProRes Movies](https://youtu.be/3M8wGqZY7XU?t=862)
 
 Unlike the movie made with Pencil2D, ProRes supports transparency, i.e.,
 alpha channel. Films can then be layered on top one another in a
