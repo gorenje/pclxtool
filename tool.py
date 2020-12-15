@@ -264,7 +264,19 @@ def run_as_gui():
                                                button_color=BlackWhite)
 
         if event == "load_empty":
-            glbls.main_window['FILENAME'].Update(HomeBase + "/assets/empty.pclx")
+            tmp_filename = None
+            for seq_num in range(1,10000):
+                file_name = "/tmp/empty.{}.pclx".format("%04d" % seq_num)
+                if not os.path.isfile(file_name):
+                    tmp_filename = file_name
+                    break
+
+            if tmp_filename == None:
+                glbls.main_window['-status-'].Update("Error: /tmp is full")
+            else:
+                subprocess.call("cp {}/assets/empty.pclx {}".format(
+                    HomeBase, tmp_filename), shell=True)
+                glbls.main_window['FILENAME'].Update(tmp_filename)
 
         if event == 'FILENAME':
             if values['FILENAME'] == "" or values['FILENAME'] == None:
