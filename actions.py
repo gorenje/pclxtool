@@ -280,8 +280,6 @@ def scale_images(opts, obj_elem):
     scale_layers = (opts.layers and opts.layers.split(",")) or (
         [elem.attributes["name"].value for elem in layers(obj_elem)])
 
-    frnr_rng = compute_frame_range(opts, defrng=ALL_FRAMES)
-
     prgstr = ""
     for layer in layers(obj_elem):
         if (layer.attributes["type"].value == LAYER_TYPE_BITMAP and
@@ -321,6 +319,7 @@ def scale_images(opts, obj_elem):
                     opts.progress("{} {}".format(prgstr,cnt))
 
             else:
+                frnr_rng = compute_frame_range(opts, defrng=ALL_FRAMES)
                 for img in sorted(imgs(layer), key=frnr):
                     if frnr(img) in frnr_rng:
                         subprocess.call("{} data/{} -scale {}% data/{}".format(
