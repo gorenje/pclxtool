@@ -328,6 +328,49 @@ def scale_images(opts, obj_elem):
 
                         opts.progress("{} {}".format(prgstr,frnr(img)))
 
+# Rotate frames in layer.
+def rotate_frames(opts,obj_elem):
+    apply_to_layers = (opts.layers and opts.layers.split(",")) or (
+        [elem.attributes["name"].value for elem in layers(obj_elem)])
+
+    prgstr = ""
+
+    for layer in layers(obj_elem):
+        if (layer.attributes["type"].value == LAYER_TYPE_BITMAP and
+            layer.attributes["name"].value in apply_to_layers):
+
+            prgstr = "{},{}".format(prgstr,
+                                    layer.attributes["name"].value)
+            opts.progress(prgstr)
+            rcc = RotateComputer(opts)
+
+            if opts.duplicate:
+                max_frame_nr          = max([frnr(e) for e in imgs(layer)])
+                last_frame, src_frame = None, None
+
+                for img in imgs(layer):
+                    if frnr(img) == opts.from_frame: src_frame  = img
+                    if frnr(img) == max_frame_nr:    last_frame = img
+
+                    if src_frame == None or last_frame == None: continue
+
+                for cnt in range(1, opts.count + 1):
+                    opts.progress("{} - {}".format(prgstr,cnt))
+
+                    new_frame_nr                = max_frame_nr + cnt
+                    cln_img                     = src_frame.cloneNode(0)
+                    cln_img.attributes['frame'] = str(new_frame_nr)
+                    cln_img.attributes['src']   = cpf(cln_img, new_frame_nr)
+
+                    apply_rotation(rcc, opts, src(cln_img), CONVERT_EXE)
+
+                    last_frame = layer.insertBefore(cln_img, last_frame)
+            else:
+                frnr_rng = compute_frame_range(opts, defrng=ALL_FRAMES)
+                for img in sorted(imgs(layer), key=frnr):
+                    if frnr(img) in frnr_rng:
+                        opts.progress("{} - {}".format(prgstr,frnr(img)))
+                        apply_rotation(rcc, opts, src(img), CONVERT_EXE)
 
 # Encode using Apple ProRes codec with transparency. This can then be used
 # in Davinci Resolve.
@@ -388,51 +431,6 @@ def make_movie(opts, obj_elem):
     os.chdir("/")
     opts.done_doing()
     opts.new_movie_file(movie_name)
-
-
-def rotate_frames(opts,obj_elem):
-    apply_to_layers = (opts.layers and opts.layers.split(",")) or (
-        [elem.attributes["name"].value for elem in layers(obj_elem)])
-
-    prgstr   = ""
-
-    for layer in layers(obj_elem):
-        if (layer.attributes["type"].value == LAYER_TYPE_BITMAP and
-            layer.attributes["name"].value in apply_to_layers):
-
-            prgstr = "{},{}".format(prgstr,
-                                    layer.attributes["name"].value)
-            opts.progress(prgstr)
-            rcc = RotateComputer(opts)
-
-            if opts.duplicate:
-                max_frame_nr          = max([frnr(e) for e in imgs(layer)])
-                last_frame, src_frame = None, None
-
-                for img in imgs(layer):
-                    if frnr(img) == opts.from_frame: src_frame  = img
-                    if frnr(img) == max_frame_nr:    last_frame = img
-
-                    if src_frame == None or last_frame == None: continue
-
-                for cnt in range(1, opts.count + 1):
-                    opts.progress("{} - {}".format(prgstr,cnt))
-
-                    new_frame_nr                = max_frame_nr + cnt
-                    cln_img                     = src_frame.cloneNode(0)
-                    cln_img.attributes['frame'] = str(new_frame_nr)
-                    cln_img.attributes['src']   = cpf(cln_img, new_frame_nr)
-
-                    apply_rotation(rcc, opts, src(cln_img), CONVERT_EXE)
-
-                    last_frame = layer.insertBefore(cln_img, last_frame)
-            else:
-                frnr_rng = compute_frame_range(opts)
-                for img in sorted(imgs(layer), key=frnr):
-                    if frnr(img) in frnr_rng:
-                        opts.progress("{} - {}".format(prgstr,frnr(img)))
-                        apply_rotation(rcc, opts, src(img), CONVERT_EXE)
-
 
 # Multi-Copy frames --> take a frame range and copy each frame X times, i.e.:
 #   copy frames 2 to 4 three times each would like like this:
