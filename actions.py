@@ -282,8 +282,6 @@ def scale_images(opts, obj_elem):
 
     frnr_rng = compute_frame_range(opts)
 
-    scc = ScaleComputer(opts)
-
     prgstr = ""
     for layer in layers(obj_elem):
         if (layer.attributes["type"].value == LAYER_TYPE_BITMAP and
@@ -291,6 +289,7 @@ def scale_images(opts, obj_elem):
 
             prgstr = "{},{}".format(layer.attributes["name"].value,prgstr)
             opts.progress(prgstr)
+            scc = ScaleComputer(opts)
 
             if opts.duplicate:
                 src_frame, last_frame = None, None
@@ -309,6 +308,14 @@ def scale_images(opts, obj_elem):
                     subprocess.call("{} data/{} -scale {}% data/{}".format(
                         CONVERT_EXE, src(cln_img), scc.factor(),
                         src(cln_img)), shell=True)
+
+                    if opts.center_after_scaling:
+                        with pilImg.open("data/{}".format(src(cln_img))) as img:
+                            cln_img.attributes['topLeftX'] = str(
+                                int(img.width / -2.0))
+                            cln_img.attributes['topLeftY'] = str(
+                                int(img.height / -2.0))
+
                     last_frame = layer.insertBefore(cln_img, last_frame)
 
                     opts.progress("{} {}".format(prgstr,cnt))
@@ -388,7 +395,6 @@ def rotate_frames(opts,obj_elem):
     apply_to_layers = (opts.layers and opts.layers.split(",")) or (
         [elem.attributes["name"].value for elem in layers(obj_elem)])
 
-    rcc      = RotateComputer(opts)
     prgstr   = ""
 
     for layer in layers(obj_elem):
@@ -398,6 +404,7 @@ def rotate_frames(opts,obj_elem):
             prgstr = "{},{}".format(prgstr,
                                     layer.attributes["name"].value)
             opts.progress(prgstr)
+            rcc = RotateComputer(opts)
 
             if opts.duplicate:
                 max_frame_nr          = max([frnr(e) for e in imgs(layer)])

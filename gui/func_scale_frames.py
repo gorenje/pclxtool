@@ -40,6 +40,10 @@ def scale_frames_layout():
          sg.InputText(default_text="10",
                       key="count",
                       disabled=True)],
+        [sg.Checkbox('Center after Scaling',
+                     key="center_after_scaling",
+                     default=False,
+                     disabled=True)],
     ] + ButtonsAndStatus()
 
 
@@ -49,6 +53,7 @@ def scale_frames_event_handler(glbls, subwindows, window_name, target):
     if event == "duplicate":
         windw["to_frame"].Update(disabled=values["duplicate"])
         windw["count"].Update(disabled=(not values["duplicate"]))
+        windw["center_after_scaling"].Update(disabled=(not values["duplicate"]))
 
     if event == "scale_constant":
         windw["scale_start"].Update(disabled=values["scale_constant"])
@@ -58,12 +63,13 @@ def scale_frames_event_handler(glbls, subwindows, window_name, target):
 
         opts = Options(queue=glbls.queue, window_name=windw.metadata)
 
-        opts.to_frame       = int(values["to_frame"])
-        opts.from_frame     = int(values["from_frame"])
-        opts.count          = int(values["count"])
-        opts.duplicate      = values["duplicate"]
-        opts.scale_step     = float(values["scale_step"])
-        opts.scale_start    = float(values["scale_start"])
-        opts.scale_constant = values["scale_constant"]
+        opts.to_frame             = int(values["to_frame"])
+        opts.from_frame           = int(values["from_frame"])
+        opts.count                = int(values["count"])
+        opts.duplicate            = values["duplicate"]
+        opts.scale_step           = float(values["scale_step"])
+        opts.scale_start          = float(values["scale_start"])
+        opts.scale_constant       = values["scale_constant"]
+        opts.center_after_scaling = values["center_after_scaling"]
 
         throw_off_to_thread(glbls, subwindows["info"], windw, opts, target)
