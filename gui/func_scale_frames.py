@@ -9,7 +9,7 @@ def scale_frames_layout():
                  'then to frame is ignoreed and count number of from-frames\n'+
                  'are created and then scaled. If scaling by constant is \n'+
                  'selected, then that scaling factor will be used for all \n'+
-                 'frames.')
+                 'frames.\n')
         ],
         [sg.Checkbox('All Frames', key="all_frames",
                      default=False,
