@@ -280,7 +280,7 @@ def scale_images(opts, obj_elem):
     scale_layers = (opts.layers and opts.layers.split(",")) or (
         [elem.attributes["name"].value for elem in layers(obj_elem)])
 
-    frnr_rng = compute_frame_range(opts)
+    frnr_rng = compute_frame_range(opts, defrng=ALL_FRAMES)
 
     prgstr = ""
     for layer in layers(obj_elem):

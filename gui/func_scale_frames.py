@@ -11,6 +11,10 @@ def scale_frames_layout():
                  'selected, then that scaling factor will be used for all \n'+
                  'frames.')
         ],
+        [sg.Checkbox('All Frames', key="all_frames",
+                     default=False,
+                     enable_events=True)],
+
         [sg.Text('Start Frame', relief=sg.RELIEF_SUNKEN,
                  size=(20, 1), pad=(0, 3)),
          sg.InputText(default_text="1", key="from_frame")],
@@ -31,7 +35,7 @@ def scale_frames_layout():
                  size=(20, 1), pad=(0, 3)),
          sg.InputText(default_text="100", key="scale_start")],
 
-        [sg.Checkbox('Duplicate Frames', key="duplicate",
+        [sg.Checkbox('Duplicate Start Frame', key="duplicate",
                      default=False,
                      enable_events=True)],
 
@@ -50,7 +54,13 @@ def scale_frames_layout():
 def scale_frames_event_handler(glbls, subwindows, window_name, target):
     windw, event, values = obtain_subevent(subwindows, window_name)
 
+    if event == "all_frames":
+        windw["duplicate"].Update(disabled=values["all_frames"])
+        windw["to_frame"].Update(disabled=values["all_frames"])
+        windw["from_frame"].Update(disabled=values["all_frames"])
+
     if event == "duplicate":
+        windw["all_frames"].Update(disabled=values["duplicate"])
         windw["to_frame"].Update(disabled=values["duplicate"])
         windw["count"].Update(disabled=(not values["duplicate"]))
         windw["center_after_scaling"].Update(disabled=(not values["duplicate"]))
@@ -71,5 +81,10 @@ def scale_frames_event_handler(glbls, subwindows, window_name, target):
         opts.scale_start          = float(values["scale_start"])
         opts.scale_constant       = values["scale_constant"]
         opts.center_after_scaling = values["center_after_scaling"]
+
+        opts.to_frame, opts.from_frame = None, None
+        if not values["all_frames"]:
+            opts.to_frame   = int(values["to_frame"])
+            opts.from_frame = int(values["from_frame"])
 
         throw_off_to_thread(glbls, subwindows["info"], windw, opts, target)
