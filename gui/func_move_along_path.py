@@ -14,6 +14,13 @@ def move_along_path_layout():
             sg.InputText(default_text="10", key="to_frame")
         ],
 
+        [sg.Text('\n' +
+                 'Drop an SVG containing a path. Either the path element\n'+
+                 'or the layer containing the path must have the label\n'+
+                 '"track". See assets/example/track.svg for an example.\n'+
+                 'Also the SVG must have been created in inkscape.\n')
+        ],
+
         [
             sg.InputText(default_text='',
                          key='FILENAME',
