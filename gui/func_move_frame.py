@@ -37,6 +37,9 @@ def move_frames_layout():
             sg.InputText(default_text="0", key="y_abscoords", disabled=True)
         ],
 
+        [ sg.Checkbox('All Frames', key="all_frames",
+                        default=False, enable_events=True)
+        ],
         [
             sg.Text('Start Frame', relief=sg.RELIEF_SUNKEN,
                     size=(10, 1), pad=(0, 3)),
@@ -45,8 +48,6 @@ def move_frames_layout():
             sg.Text('End Frame', relief=sg.RELIEF_SUNKEN,
                     size=(10, 1), pad=(0, 3)),
             sg.InputText(default_text="10", key="to_frame"),
-            sg.Checkbox('All Frames', key="all_frames",
-                        default=False, enable_events=True)
         ],
     ] + ButtonsAndStatus()
 
@@ -68,7 +69,7 @@ def move_frames_event_handler(glbls, subwindows, window_name, target):
         windw["y_abscoords"].Update(disabled=y_abs_disabled)
 
     if event == "all_frames":
-        windw["to_frame"].Update(disabled=(values["all_frames"]))
+        windw["to_frame"  ].Update(disabled=(values["all_frames"]))
         windw["from_frame"].Update(disabled=(values["all_frames"]))
 
     if event == "doit":
