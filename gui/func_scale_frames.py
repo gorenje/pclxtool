@@ -55,14 +55,14 @@ def scale_frames_event_handler(glbls, subwindows, window_name, target):
     windw, event, values = obtain_subevent(subwindows, window_name)
 
     if event == "all_frames":
-        windw["duplicate"].Update(disabled=values["all_frames"])
-        windw["to_frame"].Update(disabled=values["all_frames"])
+        windw["duplicate" ].Update(disabled=values["all_frames"])
+        windw["to_frame"  ].Update(disabled=values["all_frames"])
         windw["from_frame"].Update(disabled=values["all_frames"])
 
     if event == "duplicate":
-        windw["all_frames"].Update(disabled=values["duplicate"])
-        windw["to_frame"].Update(disabled=values["duplicate"])
-        windw["count"].Update(disabled=(not values["duplicate"]))
+        windw["all_frames"          ].Update(disabled=values["duplicate"])
+        windw["to_frame"            ].Update(disabled=values["duplicate"])
+        windw["count"               ].Update(disabled=(not values["duplicate"]))
         windw["center_after_scaling"].Update(disabled=(not values["duplicate"]))
 
     if event == "scale_constant":
